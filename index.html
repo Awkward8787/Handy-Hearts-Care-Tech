@@ -14,7 +14,7 @@
           background-color: #ffffff;
           color: #000000;
         }
-        /* Neobrutalist Customizations - Fixed for standard CSS compatibility */
+        /* Neobrutalist Customizations */
         .neo-shadow { box-shadow: 10px 10px 0px 0px rgba(0,0,0,1); }
         .neo-shadow-sm { box-shadow: 5px 5px 0px 0px rgba(0,0,0,1); }
         .neo-border { border: 8px solid black; }
@@ -32,21 +32,24 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.48.1",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "express": "https://esm.sh/express@^5.2.1",
     "stripe": "https://esm.sh/stripe@^20.3.0",
     "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.3",
     "cors": "https://esm.sh/cors@^2.8.6",
-    "dotenv": "https://esm.sh/dotenv@^17.2.3"
+    "dotenv": "https://esm.sh/dotenv@^17.2.3",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.93.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
 <body class="bg-white text-black selection:bg-yellow-300">
     <div id="root"></div>
+    <!-- Explicit entry point for Vite build -->
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
