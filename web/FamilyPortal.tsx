@@ -51,7 +51,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ role: 'user', parts: [{ text: aiPrompt }] }],
+        contents: aiPrompt,
         config: {
           systemInstruction: "You are the HandyHearts Care Assistant. You help families understand technology for seniors. Be concise, patient, and helpful. If they ask about services, recommend hiring a HandyHearts Pro. Your tone should be encouraging but professional."
         }
@@ -60,7 +60,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
       setAiPrompt('');
     } catch (err) {
       console.error("AI Assistant Error:", err);
-      setAiResponse("System Fault: The AI logic core is currently unavailable.");
+      setAiResponse("System Fault: The AI logic core is currently unavailable. Please verify the Gemini API key configuration.");
     } finally {
       setAiLoading(false);
     }
@@ -224,7 +224,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
               ) : (
                 <p className="opacity-30">Ask me anything about senior tech support...</p>
               )}
-              {aiLoading && <div className="animate-pulse font-black text-blue-600">THINKING...</div>}
+              {aiLoading && <div className="animate-pulse font-black text-blue-600 uppercase">Thinking...</div>}
             </div>
 
             <form onSubmit={askAI} className="flex gap-2">
@@ -232,7 +232,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Ask a question..."
-                className="flex-1 p-3 text-xs outline-none"
+                className="flex-1 p-3 text-xs outline-none bg-white font-bold"
               />
               <button type="submit" disabled={aiLoading} className="bg-black text-white p-3 border-2 border-black hover:bg-blue-600 transition-colors disabled:opacity-50">
                 <Send size={16} />

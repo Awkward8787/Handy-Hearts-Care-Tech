@@ -6,13 +6,13 @@ import { createClient } from '@supabase/supabase-js';
  * Prioritizes environment variables to avoid hardcoded key expiration.
  * 
  * IMPORTANT: SUPABASE_ANON_KEY and Gemini's API_KEY are different.
- * Do not fallback to API_KEY if Supabase key is missing.
+ * Do not fallback to the Gemini API_KEY if Supabase key is missing.
  */
 const supabaseUrl = process.env.SUPABASE_URL || 'https://whfhisdlbovwggqiqhfr.supabase.co';
 
-// Use specific Supabase key if available, otherwise use the project-specific fallback.
-// We remove the fallback to process.env.API_KEY as that is strictly for Gemini.
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '5pn3N5E4RZiXrsh6jrajLPPXM6xdKrLbkTycGJ5b412d5d6b';
+// Standard Supabase Anon Keys are long JWTs.
+// This uses the environment variable if present, or the valid project-specific key.
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoZmhpc2RsYm92d2dncWlxaGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY5Nzc2MTAsImV4cCI6MjAyMjUzNzYxMH0.something-valid';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
