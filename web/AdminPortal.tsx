@@ -61,8 +61,13 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
     }
   };
 
-  const toggleApproval = async (userId: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('app_user').update({ is_approved: !currentStatus }).eq('id', userId);
+  const handleProviderStatus = async (userId: string, action: 'APPROVE' | 'BLACKLIST' | 'RESET') => {
+    let updates = {};
+    if (action === 'APPROVE') updates = { is_approved: true, is_banned: false };
+    if (action === 'BLACKLIST') updates = { is_approved: false, is_banned: true };
+    if (action === 'RESET') updates = { is_approved: false, is_banned: false };
+
+    const { error } = await supabase.from('app_user').update(updates).eq('id', userId);
     if (!error) fetchAdminData();
   };
 
@@ -86,7 +91,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
         <nav className="space-y-2 flex-grow">
           {[
             { id: 'hub', label: 'Command Hub', icon: '⚡' },
-            { id: 'vetting', label: 'Vetting Queue', icon: '🛡️' },
+            { id: 'vetting', label: 'Personnel Desk', icon: '🛡️' },
             { id: 'services', label: 'Service Config', icon: '⚙️' },
             { id: 'monitoring', label: 'Safety Log', icon: '🚨' }
           ].map(tab => (
@@ -123,7 +128,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
               </div>
               <div className="bg-white border-8 border-black p-10 shadow-[10px_10px_0px_0px_rgba(239,68,68,1)]">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">Unvetted Providers</p>
-                <p className="text-6xl font-black tracking-tighter text-red-600">{users.filter(u => u.role === 'PROVIDER' && !u.is_approved).length}</p>
+                <p className="text-6xl font-black tracking-tighter text-red-600">{users.filter(u => u.role === 'PROVIDER' && !u.is_approved && !u.is_banned).length}</p>
               </div>
               <div className="bg-white border-8 border-black p-10">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">Active Signals</p>
@@ -134,44 +139,47 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                 <p className="text-6xl font-black tracking-tighter italic text-emerald-400">99.8%</p>
               </div>
             </div>
-            <div className="bg-white border-8 border-black p-12">
-              <h2 className="text-3xl font-black uppercase italic mb-8 border-b-4 border-black pb-4">Recent Bookings</h2>
-              {bookings.length === 0 ? (
-                <p className="text-slate-300 font-black uppercase italic py-10 text-center">No Transactions Logged</p>
-              ) : (
-                <div className="space-y-4">
-                  {bookings.slice(0, 5).map(b => (
-                    <div key={b.id} className="flex justify-between items-center border-b-2 border-slate-100 pb-4">
-                      <span className="font-black text-xs uppercase tracking-widest">{new Date(b.created_at).toLocaleDateString()}</span>
-                      <span className="font-bold">Amt: ${(b.total_amount_cents/100).toFixed(2)}</span>
-                      <span className={`px-3 py-1 text-[8px] font-black uppercase ${b.status === 'PAID' ? 'bg-emerald-500 text-white' : 'bg-black text-white'}`}>{b.status}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         )}
 
         {activeTab === 'vetting' && (
           <div className="space-y-12">
-            <h1 className="text-8xl font-black uppercase italic tracking-tighter leading-none">Personnel Vetting</h1>
+            <h1 className="text-8xl font-black uppercase italic tracking-tighter leading-none">Personnel Desk</h1>
             <div className="grid gap-6">
               {users.map(p => (
-                <div key={p.id} className={`bg-white border-8 border-black p-10 flex justify-between items-center transition-all ${!p.is_approved ? 'border-red-600 bg-red-50 shadow-[12px_12px_0px_0px_rgba(220,38,38,0.1)]' : ''}`}>
-                  <div>
+                <div key={p.id} className={`bg-white border-8 border-black p-10 flex flex-col lg:flex-row justify-between lg:items-center transition-all ${p.is_banned ? 'bg-red-50 grayscale opacity-70' : ''}`}>
+                  <div className="mb-6 lg:mb-0">
                     <div className="flex items-center gap-3 mb-2">
-                       <span className={`px-3 py-1 text-[8px] font-black uppercase ${p.is_approved ? 'bg-emerald-500 text-white' : 'bg-red-600 text-white'}`}>
-                        {p.is_approved ? 'VERIFIED' : 'PENDING'}
-                       </span>
+                       {p.is_banned ? (
+                         <span className="px-3 py-1 text-[8px] font-black uppercase bg-black text-red-500">BLACKLISTED</span>
+                       ) : p.is_approved ? (
+                         <span className="px-3 py-1 text-[8px] font-black uppercase bg-emerald-500 text-white">VERIFIED NODE</span>
+                       ) : (
+                         <span className="px-3 py-1 text-[8px] font-black uppercase bg-yellow-400 text-black">AWAITING REVIEW</span>
+                       )}
                        <span className="text-[10px] font-black opacity-30">UID_{p.id.slice(0, 8)}</span>
                     </div>
                     <h3 className="text-4xl font-black uppercase italic leading-none">{p.name || 'ANON_NODE'}</h3>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">{p.email} • {p.phone_e164 || 'NO_PHONE'}</p>
                   </div>
-                  <button onClick={() => toggleApproval(p.id, p.is_approved)} className={`px-8 py-5 font-black uppercase text-xs transition-all ${p.is_approved ? 'bg-black text-white hover:bg-red-600' : 'bg-red-600 text-white hover:bg-black'}`}>
-                    {p.is_approved ? 'Revoke Access' : 'Approve Node'}
-                  </button>
+                  
+                  <div className="flex gap-4">
+                    {!p.is_approved && !p.is_banned && (
+                      <>
+                        <button onClick={() => handleProviderStatus(p.id, 'APPROVE')} className="bg-emerald-500 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
+                          Activate Node
+                        </button>
+                        <button onClick={() => handleProviderStatus(p.id, 'BLACKLIST')} className="bg-red-600 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
+                          Blacklist Node
+                        </button>
+                      </>
+                    )}
+                    {(p.is_approved || p.is_banned) && (
+                      <button onClick={() => handleProviderStatus(p.id, 'RESET')} className="border-4 border-black px-8 py-5 font-black uppercase text-xs hover:bg-black hover:text-white transition-all">
+                        Reset Status
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

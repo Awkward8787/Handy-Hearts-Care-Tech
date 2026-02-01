@@ -13,10 +13,10 @@ const ProviderPortal: React.FC<ProviderPortalProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user.is_approved) {
+    if (user.is_approved && !user.is_banned) {
       fetchData();
     }
-  }, [user.is_approved]);
+  }, [user.is_approved, user.is_banned]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -28,18 +28,37 @@ const ProviderPortal: React.FC<ProviderPortalProps> = ({ user, onLogout }) => {
     setLoading(false);
   };
 
-  if (!user.is_approved) {
+  // 1. BLACKLISTED STATE
+  if (user.is_banned) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-12 text-center font-sans">
-        <div className="border-[12px] border-red-600 p-12 max-w-2xl bg-slate-900 shadow-[20px_20px_0px_0px_rgba(220,38,38,0.3)]">
-          <h1 className="text-6xl font-black uppercase tracking-tighter mb-6 italic leading-none">Access Restricted</h1>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-12">Your provider credentials are currently in the Admin Vetting Queue. Deployment will be available upon verification.</p>
-          <button onClick={onLogout} className="w-full bg-red-600 py-6 text-xl font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Logout Terminal</button>
+        <div className="border-[16px] border-red-600 p-16 max-w-2xl bg-black shadow-[40px_40px_0px_0px_rgba(220,38,38,0.2)]">
+          <h1 className="text-8xl font-black uppercase tracking-tighter mb-10 italic leading-[0.8]">Access<br/>Revoked</h1>
+          <div className="h-4 bg-red-600 w-full mb-10"></div>
+          <p className="text-red-600 font-black uppercase tracking-widest text-lg mb-12 leading-tight">Your provider node has been permanently decommissioned by Central Command. Please contact support for appeal procedures.</p>
+          <button onClick={onLogout} className="w-full bg-red-600 py-8 text-2xl font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Disconnect Session</button>
         </div>
       </div>
     );
   }
 
+  // 2. PENDING VETTING STATE
+  if (!user.is_approved) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-12 text-center font-sans">
+        <div className="border-[12px] border-yellow-400 p-12 max-w-2xl bg-slate-900 shadow-[20px_20px_0px_0px_rgba(234,179,8,0.2)]">
+          <div className="flex justify-center mb-8">
+             <div className="w-16 h-16 border-8 border-yellow-400 border-t-transparent animate-spin"></div>
+          </div>
+          <h1 className="text-6xl font-black uppercase tracking-tighter mb-6 italic leading-none">Vetting Queue</h1>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-12">Your credentials have been logged. An Admin must verify your profile before deployment authorization is granted.</p>
+          <button onClick={onLogout} className="w-full bg-yellow-400 text-black py-6 text-xl font-black uppercase tracking-widest hover:bg-white transition-all">Logout Terminal</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. ACTIVE STATE
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       <header className="p-8 md:p-12 border-b-8 border-white flex justify-between items-center sticky top-0 bg-black z-50">

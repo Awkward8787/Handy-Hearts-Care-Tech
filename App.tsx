@@ -35,7 +35,7 @@ const App: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('app_user')
-        .select('role, name, is_approved')
+        .select('role, name, is_approved, is_banned')
         .eq('id', sbUser.id)
         .single();
 
@@ -45,7 +45,8 @@ const App: React.FC = () => {
           email: sbUser.email || '',
           name: data.name || 'User',
           role: data.role as UserRole,
-          is_approved: data.is_approved
+          is_approved: data.is_approved,
+          is_banned: data.is_banned
         });
       } else {
         setUser({
@@ -53,7 +54,8 @@ const App: React.FC = () => {
           email: sbUser.email || '',
           name: sbUser.user_metadata?.full_name || 'New User',
           role: (sbUser.user_metadata?.role as UserRole) || UserRole.FAMILY,
-          is_approved: false
+          is_approved: false,
+          is_banned: false
         });
       }
     } catch (e) {
