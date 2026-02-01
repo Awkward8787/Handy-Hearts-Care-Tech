@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from './types/entities';
 import AdminPortal from './web/AdminPortal';
@@ -6,29 +7,21 @@ import ProviderPortal from './web/ProviderPortal';
 import LoginScreen from './web/components/LoginScreen';
 import { supabase } from './lib/supabase';
 
+const ADMIN_EMAIL = 'awkwardjmusic@gmail.com';
+
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [syncError, setSyncError] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
     const initSession = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("HandyHearts: Session retrieval error:", sessionError);
-        }
-
-        if (session?.user) {
-          await fetchAndMapUser(session.user);
-        }
-      } catch (e) {
-        console.error("HandyHearts: Critical Boot Failure:", e);
-      } finally {
-        setLoading(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchAndMapUser(session.user);
       }
+      setInitializing(false);
     };
+
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -36,70 +29,72 @@ const App: React.FC = () => {
         await fetchAndMapUser(session.user);
       } else {
         setUser(null);
-        setSyncError(false);
       }
-      setLoading(false);
     });
     
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchAndMapUser = async (sbUser: any, retryCount = 0) => {
+    // 1. Check for hardcoded Admin override immediately
+    if (sbUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      setUser({
+        id: sbUser.id,
+        email: sbUser.email,
+        name: sbUser.user_metadata?.full_name || 'Administrator',
+        role: UserRole.ADMIN,
+        is_approved: true,
+        is_banned: false
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('app_user')
-        .select('role, name, is_approved, is_banned')
+        .select('*')
         .eq('id', sbUser.id)
         .single();
 
       if (error || !data) {
-        // If it's a new user, the trigger might be lagging. Retry up to 3 times.
-        if (retryCount < 3) {
-          console.log(`HandyHearts: Profile sync lag. Retry ${retryCount + 1}...`);
-          setTimeout(() => fetchAndMapUser(sbUser, retryCount + 1), 1500);
+        if (retryCount < 5) {
+          setTimeout(() => fetchAndMapUser(sbUser, retryCount + 1), 1000);
           return;
         }
         
-        // Fallback if database record still hasn't appeared
-        console.warn('HandyHearts: Public profile missing, using auth metadata fallback.');
+        // Fallback mapping
         setUser({
           id: sbUser.id,
           email: sbUser.email || '',
           name: sbUser.user_metadata?.full_name || 'User',
-          role: (sbUser.user_metadata?.role as UserRole) || UserRole.FAMILY,
+          role: (sbUser.user_metadata?.role as UserRole || UserRole.FAMILY),
           is_approved: false,
           is_banned: false
         });
-        setSyncError(true);
       } else {
         setUser({
-          id: sbUser.id,
-          email: sbUser.email || '',
-          name: data.name || 'User',
+          id: data.id,
+          email: data.email,
+          name: data.name,
           role: data.role as UserRole,
           is_approved: data.is_approved,
           is_banned: data.is_banned
         });
-        setSyncError(false);
       }
     } catch (e) {
-      console.error('HandyHearts: Profile Sync Failed:', e);
-      setSyncError(true);
+      console.error('HandyHearts: Profile Mapping Error', e);
     }
   };
 
   const handleLogout = async () => {
-    setLoading(true);
     await supabase.auth.signOut();
     setUser(null);
-    setLoading(false);
   };
 
-  if (loading) {
+  if (initializing) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
-        <div className="w-16 h-16 border-8 border-black border-t-blue-600 animate-spin mb-4"></div>
-        <p className="font-black uppercase text-xs tracking-widest">Establishing Link...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-12 h-12 border-4 border-black border-t-blue-600 animate-spin"></div>
       </div>
     );
   }
@@ -108,30 +103,12 @@ const App: React.FC = () => {
     return <LoginScreen onLogin={(u) => setUser(u)} />;
   }
 
-  // If there's a persistent sync error, show a warning but allow access if fallback role is safe
-  const SyncWarning = () => syncError ? (
-    <div className="fixed bottom-4 right-4 bg-red-600 text-white p-4 border-4 border-black font-black uppercase text-[10px] z-[9999] animate-bounce">
-      Profile Sync Delayed: Some features may be restricted.
-    </div>
-  ) : null;
-
   return (
-    <>
-      <SyncWarning />
-      {user.role === UserRole.ADMIN ? (
-        <AdminPortal user={user} onLogout={handleLogout} />
-      ) : user.role === UserRole.FAMILY ? (
-        <FamilyPortal user={user} onLogout={handleLogout} />
-      ) : user.role === UserRole.PROVIDER ? (
-        <ProviderPortal user={user} onLogout={handleLogout} />
-      ) : (
-        <div className="min-h-screen flex items-center justify-center p-20 text-center font-black uppercase flex-col gap-4">
-          <span className="text-6xl">🚫</span>
-          <span>Unauthorized Role State.</span>
-          <button onClick={handleLogout} className="underline text-sm">Return to Terminal</button>
-        </div>
-      )}
-    </>
+    <div className="min-h-screen">
+      {user.role === UserRole.ADMIN && <AdminPortal user={user} onLogout={handleLogout} />}
+      {user.role === UserRole.FAMILY && <FamilyPortal user={user} onLogout={handleLogout} />}
+      {user.role === UserRole.PROVIDER && <ProviderPortal user={user} onLogout={handleLogout} />}
+    </div>
   );
 };
 

@@ -6,7 +6,6 @@ import { createClient } from '@supabase/supabase-js';
  * Project: Handy Hearts Care Tech (whfhisdlbovwggqiqhfr)
  */
 const supabaseUrl = 'https://whfhisdlbovwggqiqhfr.supabase.co';
-// Updated with the user-provided API key
 const supabaseAnonKey = '5pn3N5E4RZiXrsh6jrajLPPXM6xdKrLbkTycGJ5b412d5d6b';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
