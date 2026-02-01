@@ -16,7 +16,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
   const [inquiries, setInquiries] = useState<InquirySubmission[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  // Updated state type to use the Booking interface
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [monitoring, setMonitoring] = useState<any[]>([]);
 
   useEffect(() => {
@@ -143,7 +144,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
               </div>
               <div className="bg-white border-8 border-black p-10">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">Unrouted Signals</p>
-                <p className="text-6xl font-black tracking-tighter">{inquiries.filter(i => i.status === 'new').length}</p>
+                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
+                <p className="text-6xl font-black tracking-tighter">{inquiries.filter(i => i.status === 'submitted').length}</p>
               </div>
               <div className="bg-black text-white border-8 border-black p-10">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">System Health</p>
@@ -154,14 +156,16 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
             <section className="space-y-8">
               <h2 className="text-4xl font-black uppercase italic tracking-tight">Signal Routing Matrix</h2>
               <div className="grid gap-6">
-                {inquiries.filter(i => i.status === 'new').map(sig => (
+                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
+                {inquiries.filter(i => i.status === 'submitted').map(sig => (
                   <div key={sig.id} className="bg-white border-8 border-black p-8 flex flex-col lg:flex-row justify-between lg:items-center">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <span className="px-2 py-0.5 text-[8px] font-black bg-yellow-400 text-black uppercase">NEW SIGNAL</span>
                         <span className="text-[10px] font-black opacity-30">REF_{sig.id.slice(0,8)}</span>
                       </div>
-                      <h3 className="text-3xl font-black uppercase italic">{sig.service_requested}</h3>
+                      {/* Changed service_requested to service_category to fix property access error */}
+                      <h3 className="text-3xl font-black uppercase italic">{sig.service_category}</h3>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">FOR: {sig.full_name} • ${((sig.total_price_cents || 0)/100).toFixed(2)}</p>
                     </div>
                     
@@ -182,7 +186,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                     </div>
                   </div>
                 ))}
-                {inquiries.filter(i => i.status === 'new').length === 0 && (
+                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
+                {inquiries.filter(i => i.status === 'submitted').length === 0 && (
                   <div className="border-4 border-dashed border-slate-200 p-12 text-center text-slate-300 font-black uppercase tracking-widest italic">All Signals Routed</div>
                 )}
               </div>
