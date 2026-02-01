@@ -27,20 +27,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
     try {
       if (activeForm.mode === 'signup') {
-        // Strict Validation
         if (!fullName || !email || !phone || !password || !confirmPassword) {
-          throw new Error('All fields are required.');
+          throw new Error('All operational parameters are required.');
         }
 
         if (password !== confirmPassword) {
-          throw new Error('Passwords do not match. Please verify and try again.');
+          throw new Error('Secret keys do not match. Verify and retry.');
         }
 
         if (password.length < 6) {
-          throw new Error('Password must be at least 6 characters.');
+          throw new Error('Security keys must be at least 6 characters.');
         }
 
-        const { error: signupError } = await supabase.auth.signUp({
+        const { data, error: signupError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -51,8 +50,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             }
           }
         });
+        
         if (signupError) throw signupError;
-        setMessage('Account created! Please check your email for a verification link.');
+        
+        if (data.user && data.session) {
+          setMessage('Node Initialized. Redirecting...');
+        } else {
+          setMessage('Sequence Initiated. Check your email for the verification link.');
+        }
       } else {
         const { error: signinError } = await supabase.auth.signInWithPassword({
           email,
@@ -61,11 +66,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         if (signinError) throw signinError;
       }
     } catch (err: any) {
-      console.error('Auth Error:', err);
-      if (err.message === 'Failed to fetch') {
-        setError('Network error: Check your internet connection.');
+      console.error('HandyHearts Auth Error:', err);
+      
+      // Specifically target the common Supabase trigger error
+      if (err.message?.includes('Database error saving new user')) {
+        setError('CRITICAL SYNC ERROR: The database failed to create your profile. Please ensure you have run the "Robust Profile Sync" SQL script in your Supabase Dashboard.');
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('VERIFICATION REQUIRED: Please check your inbox for the activation link.');
       } else {
-        setError(err.message || 'Authentication failed. Please check your inputs.');
+        setError(err.message || 'Authentication sequence failed.');
       }
     } finally {
       setLoading(false);
@@ -90,21 +99,29 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-500 ${
-        isAdmin ? 'bg-red-950 text-red-100' : isCareTech ? 'bg-black text-white' : 'bg-white text-black'
+        isAdmin ? 'bg-white text-black' : isCareTech ? 'bg-black text-white' : 'bg-white text-black'
       }`}>
         <div className={`max-w-md w-full border-[8px] p-8 md:p-12 space-y-10 shadow-[20px_20px_0px_0px_rgba(0,0,0,0.15)] ${
-          isAdmin ? 'border-red-500 shadow-red-900/50' : isCareTech ? 'border-white' : 'border-black'
+          isAdmin ? 'border-red-600 shadow-red-100' : isCareTech ? 'border-white' : 'border-black'
         }`}>
-          <button 
-            onClick={resetForm}
-            className={`text-sm font-black uppercase underline decoration-4 underline-offset-8 hover:opacity-50 transition-opacity`}
-          >
-            ← BACK
-          </button>
+          <div className="flex justify-between items-center">
+            <button 
+              onClick={resetForm}
+              className={`text-sm font-black uppercase underline decoration-4 underline-offset-8 hover:opacity-50 transition-opacity ${isAdmin ? 'decoration-red-600' : ''}`}
+            >
+              ← BACK
+            </button>
+            <button 
+              onClick={() => setActiveForm({ ...activeForm, mode: isSignup ? 'signin' : 'signup' })}
+              className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border-2 ${isAdmin ? 'border-red-600 text-red-600' : isCareTech ? 'border-white text-white' : 'border-black'}`}
+            >
+              {isSignup ? 'SWITCH TO LOGIN' : 'SWITCH TO REGISTRATION'}
+            </button>
+          </div>
           
           <div className="space-y-3">
-            <h2 className="text-5xl font-black uppercase tracking-tight italic">
-              {isAdmin ? 'TERMINAL' : isSignup ? 'JOIN US' : 'LOGIN'}
+            <h2 className={`text-5xl font-black uppercase tracking-tight italic ${isAdmin ? 'text-red-600' : ''}`}>
+              {isAdmin ? (isSignup ? 'REGISTER NODE' : 'TERMINAL') : isSignup ? 'JOIN US' : 'LOGIN'}
             </h2>
             <p className={`font-bold uppercase tracking-[0.2em] text-xs opacity-60`}>
               {activeForm.role} ACCESS
@@ -123,7 +140,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className={`w-full border-4 p-4 text-lg font-bold transition-all outline-none ${
-                        isAdmin ? 'bg-red-900 border-red-500 text-white placeholder:text-red-700' :
+                        isAdmin ? 'bg-white border-red-600 text-black placeholder:text-slate-300' :
                         isCareTech ? 'border-white bg-black text-white focus:bg-white focus:text-black placeholder:text-slate-700' : 
                         'border-black bg-white text-black focus:bg-black focus:text-white placeholder:text-slate-300'
                       }`}
@@ -138,7 +155,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className={`w-full border-4 p-4 text-lg font-bold transition-all outline-none ${
-                        isAdmin ? 'bg-red-900 border-red-500 text-white placeholder:text-red-700' :
+                        isAdmin ? 'bg-white border-red-600 text-black placeholder:text-slate-300' :
                         isCareTech ? 'border-white bg-black text-white focus:bg-white focus:text-black placeholder:text-slate-700' : 
                         'border-black bg-white text-black focus:bg-black focus:text-white placeholder:text-slate-300'
                       }`}
@@ -156,7 +173,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full border-4 p-4 text-lg font-bold transition-all outline-none ${
-                    isAdmin ? 'bg-red-900 border-red-500 text-white placeholder:text-red-700' :
+                    isAdmin ? 'bg-white border-red-600 text-black placeholder:text-slate-300' :
                     isCareTech ? 'border-white bg-black text-white focus:bg-white focus:text-black placeholder:text-slate-700' : 
                     'border-black bg-white text-black focus:bg-black focus:text-white placeholder:text-slate-300'
                   }`}
@@ -172,7 +189,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`w-full border-4 p-4 text-lg font-bold transition-all outline-none ${
-                    isAdmin ? 'bg-red-900 border-red-500 text-white placeholder:text-red-700' :
+                    isAdmin ? 'bg-white border-red-600 text-black placeholder:text-slate-300' :
                     isCareTech ? 'border-white bg-black text-white focus:bg-white focus:text-black placeholder:text-slate-700' : 
                     'border-black bg-white text-black focus:bg-black focus:text-white placeholder:text-slate-300'
                   }`}
@@ -189,7 +206,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={`w-full border-4 p-4 text-lg font-bold transition-all outline-none ${
-                      isAdmin ? 'bg-red-900 border-red-500 text-white placeholder:text-red-700' :
+                      isAdmin ? 'bg-white border-red-600 text-black placeholder:text-slate-300' :
                       isCareTech ? 'border-white bg-black text-white focus:bg-white focus:text-black placeholder:text-slate-700' : 
                       'border-black bg-white text-black focus:bg-black focus:text-white placeholder:text-slate-300'
                     }`}
@@ -201,7 +218,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
             {error && (
               <div className="border-4 p-4 border-red-600 bg-red-600/10">
-                <p className="font-black text-xs uppercase text-red-600">{error}</p>
+                <p className="font-black text-[10px] uppercase text-red-600 leading-tight">{error}</p>
               </div>
             )}
             
@@ -215,12 +232,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               type="submit"
               disabled={loading}
               className={`w-full py-6 text-2xl font-black uppercase tracking-widest transition-all active:scale-[0.98] ${
-                isAdmin ? 'bg-red-500 text-white hover:bg-red-400' :
+                isAdmin ? 'bg-red-600 text-white hover:bg-black' :
                 isCareTech ? 'bg-white text-black hover:bg-slate-200' : 
                 'bg-black text-white hover:invert'
               }`}
             >
-              {loading ? 'PROCESSING...' : isSignup ? 'SUBMIT' : 'ACCESS NODE'}
+              {loading ? 'PROCESSING...' : isSignup ? 'INITIALIZE NODE' : 'ACCESS NODE'}
             </button>
           </form>
         </div>

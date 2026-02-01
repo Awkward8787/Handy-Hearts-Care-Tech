@@ -36,12 +36,12 @@ const App: React.FC = () => {
   }, []);
 
   /**
-   * Fetches the official record from 'app_user' table to ensure
-   * role-based access is synchronized with the database, not just JWT metadata.
+   * Fetches the official record from 'app_user' table.
+   * If not found (new registration), it uses metadata as a fallback
+   * to prevent blocking the user while the DB trigger finishes.
    */
   const fetchAndMapUser = async (sbUser: any) => {
     try {
-      // First try to get from app_user table for source of truth
       const { data, error } = await supabase
         .from('app_user')
         .select('role, name')
@@ -52,21 +52,21 @@ const App: React.FC = () => {
         setUser({
           id: sbUser.id,
           email: sbUser.email || '',
-          name: data.name,
+          name: data.name || 'User',
           role: data.role as UserRole
         });
       } else {
-        // Fallback to metadata if record not found yet (e.g. during sync)
-        const roleMetadata = sbUser.user_metadata?.role as UserRole;
+        // FALLBACK: Use Auth Metadata if DB record is lagging
+        const metaRole = sbUser.user_metadata?.role as UserRole;
         setUser({
           id: sbUser.id,
           email: sbUser.email || '',
-          name: sbUser.user_metadata?.full_name || sbUser.email?.split('@')[0] || 'User',
-          role: roleMetadata || UserRole.FAMILY
+          name: sbUser.user_metadata?.full_name || 'New User',
+          role: metaRole || UserRole.FAMILY
         });
       }
     } catch (e) {
-      console.error('Failed to map user:', e);
+      console.error('HandyHearts: Error mapping user context:', e);
     }
   };
 
@@ -79,10 +79,10 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center space-y-10">
-          <div className="w-24 h-24 border-[14px] border-black border-t-yellow-400 animate-spin"></div>
+          <div className="w-24 h-24 border-[14px] border-black border-t-red-500 animate-spin"></div>
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black uppercase tracking-[0.4em] italic leading-none">HandyHearts</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.8em] text-slate-400 ml-4 animate-pulse">Syncing Secure Core</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.8em] text-slate-400 ml-4 animate-pulse">Establishing Secure Node</p>
           </div>
         </div>
       </div>
