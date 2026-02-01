@@ -13,21 +13,34 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchAndMapUser(session.user);
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("HandyHearts: Session retrieval error:", sessionError);
+        }
+
+        if (session?.user) {
+          await fetchAndMapUser(session.user);
+        }
+      } catch (e) {
+        console.error("HandyHearts: Critical Boot Failure:", e);
+      } finally {
+        // Ensure loading state is ALWAYS resolved
+        setLoading(false);
       }
-      setLoading(false);
     };
     initSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         await fetchAndMapUser(session.user);
       } else {
         setUser(null);
       }
+      setLoading(false);
     });
+    
     return () => subscription.unsubscribe();
   }, []);
 
@@ -49,6 +62,7 @@ const App: React.FC = () => {
           is_banned: data.is_banned
         });
       } else {
+        // Fallback for new users or sync delays
         setUser({
           id: sbUser.id,
           email: sbUser.email || '',
@@ -59,13 +73,24 @@ const App: React.FC = () => {
         });
       }
     } catch (e) {
-      console.error('HandyHearts: Context Mapping Failed:', e);
+      console.error('HandyHearts: Profile Sync Failed:', e);
+      // Even if database profile fails, we set a basic user object based on auth metadata
+      setUser({
+        id: sbUser.id,
+        email: sbUser.email || '',
+        name: sbUser.user_metadata?.full_name || 'User',
+        role: (sbUser.user_metadata?.role as UserRole) || UserRole.FAMILY,
+        is_approved: false,
+        is_banned: false
+      });
     }
   };
 
   const handleLogout = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
     setUser(null);
+    setLoading(false);
   };
 
   if (loading) {
@@ -73,7 +98,10 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center space-y-10">
           <div className="w-24 h-24 border-[14px] border-black border-t-red-500 animate-spin"></div>
-          <h2 className="text-3xl font-black uppercase tracking-[0.4em] italic leading-none animate-pulse">HandyHearts</h2>
+          <div className="text-center">
+            <h2 className="text-3xl font-black uppercase tracking-[0.4em] italic leading-none animate-pulse">HandyHearts</h2>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-4 opacity-30">Establishing Secure Link...</p>
+          </div>
         </div>
       </div>
     );
@@ -91,7 +119,13 @@ const App: React.FC = () => {
     case UserRole.PROVIDER:
       return <ProviderPortal user={user} onLogout={handleLogout} />;
     default:
-      return <div className="p-20 text-center font-black uppercase">Unauthorized Role State.</div>;
+      return (
+        <div className="min-h-screen flex items-center justify-center p-20 text-center font-black uppercase flex-col gap-4">
+          <span className="text-6xl">🚫</span>
+          <span>Unauthorized Role State.</span>
+          <button onClick={handleLogout} className="underline text-sm">Return to Terminal</button>
+        </div>
+      );
   }
 };
 
