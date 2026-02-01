@@ -16,10 +16,11 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [detectedRole, setDetectedRole] = useState<string | null>(null);
 
   useEffect(() => {
     verifyAdminRole();
-  }, []);
+  }, [user.id]);
 
   useEffect(() => {
     if (isVerified === true) {
@@ -35,10 +36,18 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
         .eq('id', user.id)
         .single();
 
-      if (error || data?.role !== UserRole.ADMIN) {
-        setErrorMsg('Security Verification Failed. Access Restricted.');
+      if (error) {
+        setDetectedRole('NOT_FOUND');
+        setErrorMsg(`Profile record missing. Ensure the database trigger is installed.`);
         setIsVerified(false);
-        setTimeout(onLogout, 3000);
+        return;
+      }
+
+      setDetectedRole(data?.role);
+
+      if (data?.role !== 'ADMIN') {
+        setErrorMsg(`Account status: ${data?.role}. Administrator clearance is required.`);
+        setIsVerified(false);
       } else {
         setIsVerified(true);
       }
@@ -79,7 +88,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
         setMonitoringNotes(data || []);
       }
     } catch (err: any) {
-      setErrorMsg(`DB Error: ${err.message}. Check if SQL setup was run.`);
+      setErrorMsg(`DB Error: ${err.message}. Admin read policies might be missing.`);
     } finally {
       setLoading(false);
     }
@@ -100,19 +109,43 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
 
   if (isVerified === false) {
     return (
-      <div className="min-h-screen bg-red-600 text-white flex flex-col items-center justify-center p-10 text-center font-black uppercase">
-        <h1 className="text-6xl mb-4 italic leading-none animate-pulse">Access Denied</h1>
-        <p className="tracking-widest opacity-80 mb-8 max-w-md">{errorMsg || 'Unauthorized Personnel detected.'}</p>
-        <button onClick={onLogout} className="px-8 py-4 border-4 border-white font-black hover:bg-white hover:text-red-600 transition-all">EXIT TERMINAL</button>
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 sm:p-10 text-center font-black uppercase">
+        <div className="max-w-xl w-full border-[12px] border-red-600 p-8 sm:p-12 shadow-[30px_30px_0px_0px_rgba(220,38,38,0.2)] bg-black">
+          <div className="mb-10 flex justify-center">
+             <div className="w-20 h-20 border-[8px] border-red-600 flex items-center justify-center text-4xl animate-pulse">!</div>
+          </div>
+          <h1 className="text-4xl sm:text-6xl mb-6 italic leading-none text-red-600">Access Restricted</h1>
+          
+          <div className="bg-red-950/20 p-6 mb-10 text-left border-l-8 border-red-600 space-y-2">
+            <p className="text-[10px] tracking-widest text-red-400 font-mono">SECURITY LOG:</p>
+            <p className="font-bold text-sm leading-tight text-white uppercase font-mono">{errorMsg}</p>
+            <div className="pt-4 space-y-1 font-mono text-[10px] opacity-60">
+              <p>USER_ID: {user.id}</p>
+              <p>EMAIL: {user.email}</p>
+              <p>DETECTED_ROLE: {detectedRole}</p>
+            </div>
+          </div>
+
+          <div className="mb-10 text-left space-y-4">
+            <p className="text-xs font-bold text-red-500 normal-case italic">Action Required:</p>
+            <p className="text-[10px] text-slate-400 normal-case leading-relaxed">
+              If you just updated your role in Supabase, try logging out and back in to refresh your token.
+            </p>
+          </div>
+
+          <button onClick={onLogout} className="w-full py-6 bg-red-600 text-white font-black hover:bg-white hover:text-black transition-all uppercase tracking-widest text-xl shadow-[10px_10px_0px_0px_rgba(255,255,255,0.1)]">
+            EXIT TERMINAL
+          </button>
+        </div>
       </div>
     );
   }
 
   if (isVerified === null) {
     return (
-      <div className="min-h-screen bg-slate-900 text-red-500 flex flex-col items-center justify-center font-mono uppercase tracking-[0.5em] space-y-8">
-        <div className="w-16 h-16 border-8 border-red-500 border-t-transparent animate-spin"></div>
-        <p className="animate-pulse text-sm">Validating Command Node...</p>
+      <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-mono uppercase tracking-[0.5em] space-y-8">
+        <div className="w-20 h-20 border-[12px] border-black border-t-red-600 animate-spin"></div>
+        <p className="animate-pulse text-xs font-black">Authenticating Admin Node...</p>
       </div>
     );
   }
@@ -158,7 +191,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
 
         {activeTab === 'dashboard' && (
           <div className="space-y-16">
-            <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter italic">Status</h1>
+            <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter italic leading-none">Status</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div className="bg-white border-8 border-black p-12 hover:shadow-[15px_15px_0px_0px_rgba(239,68,68,1)] transition-all">
                 <p className="text-xs font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">New Signals</p>

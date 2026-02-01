@@ -35,11 +35,6 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  /**
-   * Fetches the official record from 'app_user' table.
-   * If not found (new registration), it uses metadata as a fallback
-   * to prevent blocking the user while the DB trigger finishes.
-   */
   const fetchAndMapUser = async (sbUser: any) => {
     try {
       const { data, error } = await supabase
@@ -56,7 +51,7 @@ const App: React.FC = () => {
           role: data.role as UserRole
         });
       } else {
-        // FALLBACK: Use Auth Metadata if DB record is lagging
+        // Fallback to metadata for seamless login while DB trigger finishes
         const metaRole = sbUser.user_metadata?.role as UserRole;
         setUser({
           id: sbUser.id,
@@ -66,7 +61,7 @@ const App: React.FC = () => {
         });
       }
     } catch (e) {
-      console.error('HandyHearts: Error mapping user context:', e);
+      console.error('HandyHearts: Context Mapping Failed:', e);
     }
   };
 
@@ -93,7 +88,7 @@ const App: React.FC = () => {
     return <LoginScreen onLogin={(u) => setUser(u)} />;
   }
 
-  // Secure Role Routing
+  // Final routing based on the official database role
   switch (user.role) {
     case UserRole.ADMIN:
       return <AdminPortal user={user} onLogout={handleLogout} />;
@@ -102,7 +97,7 @@ const App: React.FC = () => {
     case UserRole.PROVIDER:
       return <ProviderPortal user={user} onLogout={handleLogout} />;
     default:
-      return <div className="p-20 text-center font-black uppercase">Unauthorized Role Detected. Contact Support.</div>;
+      return <div className="p-20 text-center font-black uppercase">Unauthorized Role State. Contact Root Administrator.</div>;
   }
 };
 
