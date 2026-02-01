@@ -111,12 +111,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             >
               ← BACK
             </button>
-            <button 
-              onClick={() => setActiveForm({ ...activeForm, mode: isSignup ? 'signin' : 'signup' })}
-              className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border-2 ${isAdmin ? 'border-red-600 text-red-600' : isCareTech ? 'border-white text-white' : 'border-black'}`}
-            >
-              {isSignup ? 'SWITCH TO LOGIN' : 'SWITCH TO REGISTRATION'}
-            </button>
+            {/* Remove the switch button for Admins to prevent unauthorized registration from terminal access */}
+            {!isAdmin && (
+              <button 
+                onClick={() => setActiveForm({ ...activeForm, mode: isSignup ? 'signin' : 'signup' })}
+                className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 border-2 ${isCareTech ? 'border-white text-white' : 'border-black'}`}
+              >
+                {isSignup ? 'SWITCH TO LOGIN' : 'SWITCH TO REGISTRATION'}
+              </button>
+            )}
           </div>
           
           <div className="space-y-3">
