@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, UserRole } from '../../types/entities';
 import { supabase } from '../../lib/supabase';
@@ -62,7 +63,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       }
     } catch (err: any) {
       console.error("Auth Error:", err);
-      setError(err.message || 'Authentication sequence failed.');
+      // Handle the specific "Invalid API key" error from Supabase
+      if (err.message?.includes('API key')) {
+        setError('System Configuration Fault: Invalid API key detected. Please verify your Supabase environment variables.');
+      } else {
+        setError(err.message || 'Authentication sequence failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -90,8 +96,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   type="text" 
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-white border-4 border-black p-4 font-bold"
-                  placeholder="Master Administrator"
+                  className="w-full bg-white border-4 border-black p-4 font-bold outline-none focus:border-blue-600"
+                  placeholder="Your Full Name"
                   required
                 />
               </div>
@@ -103,8 +109,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white border-4 border-black p-4 font-bold"
-                placeholder="admin@hhcaretech.com"
+                className="w-full bg-white border-4 border-black p-4 font-bold outline-none focus:border-blue-600"
+                placeholder="email@example.com"
                 required
               />
             </div>
@@ -115,7 +121,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border-4 border-black p-4 font-bold"
+                className="w-full bg-white border-4 border-black p-4 font-bold outline-none focus:border-blue-600"
                 placeholder="••••••••"
                 required
               />
@@ -128,20 +134,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-white border-4 border-black p-4 font-bold"
+                  className="w-full bg-white border-4 border-black p-4 font-bold outline-none focus:border-blue-600"
                   placeholder="••••••••"
                   required
                 />
               </div>
             )}
 
-            {error && <div className="text-red-600 font-black text-xs uppercase p-4 bg-red-50 border-4 border-red-600">{error}</div>}
+            {error && <div className="text-red-600 font-black text-xs uppercase p-4 bg-red-50 border-4 border-red-600 animate-pulse">{error}</div>}
             {message && <div className="text-emerald-600 font-black text-xs uppercase p-4 bg-emerald-50 border-4 border-emerald-600">{message}</div>}
 
             <button 
               type="submit"
               disabled={loading}
-              className={`w-full py-6 neo-btn-primary ${isAdminRole ? 'bg-red-600 hover:bg-black hover:text-white' : ''}`}
+              className={`w-full py-6 neo-btn-primary ${isAdminRole ? 'bg-red-600 hover:bg-black hover:text-white' : ''} disabled:opacity-50`}
             >
               {loading ? 'Processing...' : isSignup ? 'Initialize Account' : 'Access Terminal'}
             </button>
@@ -151,7 +157,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               onClick={() => setActiveForm({ ...activeForm, mode: isSignup ? 'signin' : 'signup' })}
               className="w-full text-center text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity"
             >
-              {isSignup ? 'Switch to Login' : 'New Administrator? Create Profile'}
+              {isSignup ? 'Switch to Login' : 'New User? Create Profile'}
             </button>
           </form>
         </div>
@@ -178,8 +184,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <p className="font-bold text-2xl leading-snug">Elite care tech and professional assistance for your family.</p>
           </div>
           <div className="mt-12 flex gap-4">
-            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.FAMILY, mode: 'signup'})}} className="flex-1 py-6 bg-black text-white font-black uppercase tracking-widest border-4 border-black group-hover:bg-white group-hover:text-black">Join Now</button>
-            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.FAMILY, mode: 'signin'})}} className="flex-1 py-6 border-4 border-black font-black uppercase tracking-widest group-hover:border-white">Login</button>
+            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.FAMILY, mode: 'signup'})}} className="flex-1 py-6 bg-black text-white font-black uppercase tracking-widest border-4 border-black group-hover:bg-white group-hover:text-black transition-colors">Join Now</button>
+            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.FAMILY, mode: 'signin'})}} className="flex-1 py-6 border-4 border-black font-black uppercase tracking-widest group-hover:border-white transition-colors">Login</button>
           </div>
         </div>
 
@@ -189,8 +195,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <p className="font-bold text-2xl leading-snug">Monetize your skills by providing elite technical care services.</p>
           </div>
           <div className="mt-12 flex gap-4">
-            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.PROVIDER, mode: 'signup'})}} className="flex-1 py-6 bg-white text-black font-black uppercase tracking-widest border-4 border-white group-hover:bg-black group-hover:text-white group-hover:border-black">Apply</button>
-            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.PROVIDER, mode: 'signin'})}} className="flex-1 py-6 border-4 border-white font-black uppercase tracking-widest group-hover:border-black">Pro Login</button>
+            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.PROVIDER, mode: 'signup'})}} className="flex-1 py-6 bg-white text-black font-black uppercase tracking-widest border-4 border-white group-hover:bg-black group-hover:text-white group-hover:border-black transition-colors">Apply</button>
+            <button onClick={(e) => {e.stopPropagation(); setActiveForm({role: UserRole.PROVIDER, mode: 'signin'})}} className="flex-1 py-6 border-4 border-white font-black uppercase tracking-widest group-hover:border-black transition-colors">Pro Login</button>
           </div>
         </div>
       </main>

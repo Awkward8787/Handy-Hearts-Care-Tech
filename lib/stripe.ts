@@ -1,13 +1,11 @@
 
-
 /**
  * HANDYHEARTS STRIPE INFRASTRUCTURE
- * This utility manages the frontend connection to Stripe.
+ * Manages the frontend connection to Stripe.
  */
 
-// Replace this with your actual Publishable Key from the Stripe Dashboard
-// Fix: Added quotes around the key to resolve the "Cannot find name" error.
-const STRIPE_PUBLISHABLE_KEY = 'pk_live_CCg4la4IJkhKq3qE1zO1ujsI00bqA2q5vj';
+// Use environment variable if available, otherwise fallback to the provided publishable key.
+const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || 'pk_live_CCg4la4IJkhKq3qE1zO1ujsI00bqA2q5vj';
 
 let stripePromise: any = null;
 

@@ -9,9 +9,14 @@ import { PricingEngine } from '../domain/pricingEngine';
 // Load environment variables from .env file
 dotenv.config();
 
-const app = express();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-01-27' as any });
+const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
+if (!STRIPE_KEY) {
+  console.warn('⚠️ Warning: STRIPE_SECRET_KEY is missing from environment.');
+}
 
+const stripe = new Stripe(STRIPE_KEY || 'sk_test_placeholder', { apiVersion: '2025-01-27' as any });
+
+const app = express();
 app.use(cors());
 
 // 1. PAYMENT INTENT ENDPOINT
@@ -19,6 +24,10 @@ app.post('/payments/create-intent', express.json() as any, async (req: any, res:
   try {
     const { serviceId, hours, familyUserId } = req.body;
     
+    if (!STRIPE_KEY || STRIPE_KEY === 'sk_test_placeholder') {
+      throw new Error('Stripe is not configured on this node.');
+    }
+
     // Logic for hhcaretech.com pricing
     const service = { id: serviceId, name: 'Care Service', baseRate: 3500, minHours: 2 };
     const quote = PricingEngine.calculate(service as any, hours);
@@ -39,6 +48,7 @@ app.post('/payments/create-intent', express.json() as any, async (req: any, res:
       priceBreakdown: quote
     });
   } catch (error: any) {
+    console.error('Payment Intent Error:', error.message);
     res.status(400).json({ error: error.message });
   }
 });
@@ -62,4 +72,7 @@ app.post('/stripe/webhook', express.raw({ type: 'application/json' }) as any, as
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`HandyHearts Node Server running on port ${PORT}`);
+  if (!STRIPE_KEY) {
+    console.log('🛑 ALERT: Server running in partial mode (Stripe Keys Missing)');
+  }
 });
