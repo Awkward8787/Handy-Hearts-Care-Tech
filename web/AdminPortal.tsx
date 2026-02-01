@@ -16,7 +16,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
   const [inquiries, setInquiries] = useState<InquirySubmission[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  // Updated state type to use the Booking interface
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [monitoring, setMonitoring] = useState<any[]>([]);
 
@@ -41,11 +40,11 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
       if (activeTab === 'monitoring') {
         const { data: m, error: monError } = await supabase
           .from('admin_monitoring_notes')
-          .select('*, app_user!author_id(name)')
+          .select('*')
           .order('created_at', { ascending: false });
         
         if (monError) {
-           setErrorMsg("Warning: Safety log relationship data is syncing. Author names hidden.");
+           setErrorMsg("Warning: Monitoring table accessibility issues.");
         } else {
            setMonitoring(m || []);
         }
@@ -144,7 +143,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
               </div>
               <div className="bg-white border-8 border-black p-10">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">Unrouted Signals</p>
-                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
                 <p className="text-6xl font-black tracking-tighter">{inquiries.filter(i => i.status === 'submitted').length}</p>
               </div>
               <div className="bg-black text-white border-8 border-black p-10">
@@ -156,7 +154,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
             <section className="space-y-8">
               <h2 className="text-4xl font-black uppercase italic tracking-tight">Signal Routing Matrix</h2>
               <div className="grid gap-6">
-                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
                 {inquiries.filter(i => i.status === 'submitted').map(sig => (
                   <div key={sig.id} className="bg-white border-8 border-black p-8 flex flex-col lg:flex-row justify-between lg:items-center">
                     <div>
@@ -164,7 +161,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                         <span className="px-2 py-0.5 text-[8px] font-black bg-yellow-400 text-black uppercase">NEW SIGNAL</span>
                         <span className="text-[10px] font-black opacity-30">REF_{sig.id.slice(0,8)}</span>
                       </div>
-                      {/* Changed service_requested to service_category to fix property access error */}
                       <h3 className="text-3xl font-black uppercase italic">{sig.service_category}</h3>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">FOR: {sig.full_name} • ${((sig.total_price_cents || 0)/100).toFixed(2)}</p>
                     </div>
@@ -186,10 +182,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                     </div>
                   </div>
                 ))}
-                {/* Changed filter from 'new' to 'submitted' to match InquiryStatus type */}
-                {inquiries.filter(i => i.status === 'submitted').length === 0 && (
-                  <div className="border-4 border-dashed border-slate-200 p-12 text-center text-slate-300 font-black uppercase tracking-widest italic">All Signals Routed</div>
-                )}
               </div>
             </section>
           </div>
@@ -218,20 +210,13 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                   
                   <div className="flex gap-4">
                     {!p.is_approved && !p.is_banned && (
-                      <>
-                        <button onClick={() => handleProviderStatus(p.id, 'APPROVE')} className="bg-emerald-500 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
-                          Activate Node
-                        </button>
-                        <button onClick={() => handleProviderStatus(p.id, 'BLACKLIST')} className="bg-red-600 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
-                          Blacklist Node
-                        </button>
-                      </>
-                    )}
-                    {(p.is_approved || p.is_banned) && (
-                      <button onClick={() => handleProviderStatus(p.id, 'RESET')} className="border-4 border-black px-8 py-5 font-black uppercase text-xs hover:bg-black hover:text-white transition-all">
-                        Reset Status
+                      <button onClick={() => handleProviderStatus(p.id, 'APPROVE')} className="bg-emerald-500 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
+                        Activate Node
                       </button>
                     )}
+                    <button onClick={() => handleProviderStatus(p.id, 'BLACKLIST')} className="bg-red-600 text-white px-8 py-5 font-black uppercase text-xs hover:bg-black transition-all">
+                      Blacklist Node
+                    </button>
                   </div>
                 </div>
               ))}
@@ -252,9 +237,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40">Base Rate (Cents)</label>
                       <input type="number" defaultValue={s.base_rate_cents} onBlur={(e) => updateServiceRate(s.id, parseInt(e.target.value))} className="w-full border-4 border-black p-4 font-black text-2xl" />
                     </div>
-                    <div className="p-4 bg-black text-white font-black text-xl">
-                      ${(s.base_rate_cents/100).toFixed(2)}/HR
-                    </div>
                   </div>
                 </div>
               ))}
@@ -274,7 +256,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                       <span className="text-[10px] font-black opacity-40 uppercase">{new Date(n.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-2xl font-black italic">"{n.content}"</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Source: {n.app_user?.name || 'AUTHORIZED_NODE'}</p>
                   </div>
                 </div>
               ))}

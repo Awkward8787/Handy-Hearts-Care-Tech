@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { User, Service, InquirySubmission } from '../types/entities';
 import { supabase } from '../lib/supabase';
 import ServiceRequestWizard from './forms/ServiceRequestWizard';
-import { LayoutDashboard, PlusCircle, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, LogOut, MessageSquare, Send, X, Bot } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
 
 interface FamilyPortalProps {
   user: User;
@@ -15,6 +16,12 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
   const [services, setServices] = useState<Service[]>([]);
   const [inquiries, setInquiries] = useState<InquirySubmission[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // AI Chat State
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -29,10 +36,32 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
     setLoading(false);
   };
 
+  const askAI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
+    
+    setAiLoading(true);
+    setAiResponse(null);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: aiPrompt,
+        config: {
+          systemInstruction: "You are the HandyHearts Care Assistant. You help families understand technology for seniors. Be concise, patient, and neo-brutalist in your helpfulness. If they ask about services, recommend hiring a HandyHearts Pro."
+        }
+      });
+      setAiResponse(response.text || "I'm having trouble connecting to the logic core.");
+    } catch (err) {
+      setAiResponse("System Fault: Check API Key status.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleWizardSubmit = async (formData: any) => {
     setLoading(true);
     try {
-      // In production, we'd calculate the final price server-side for security
       const { error } = await supabase.from('inquiry_submission').insert({
         user_id: user.id,
         full_name: user.name,
@@ -52,11 +81,10 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
         },
         notes: formData.notes,
         status: 'submitted',
-        total_price_cents: 8500 // Placeholder
+        total_price_cents: 8500 
       });
 
       if (error) throw error;
-      alert("Deployment Mission Launched!");
       setView('DASHBOARD');
       fetchData();
     } catch (err: any) {
@@ -67,7 +95,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row relative">
       {/* Sidebar */}
       <aside className="w-full md:w-72 bg-white border-r-4 border-black p-8 flex flex-col gap-8 z-20">
         <h1 className="text-3xl font-black uppercase tracking-tighter italic border-b-4 border-black pb-4">HandyHearts</h1>
@@ -162,6 +190,50 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
           </div>
         )}
       </main>
+
+      {/* Floating AI Assistant */}
+      <div className="fixed bottom-8 right-8 z-50">
+        {!aiOpen ? (
+          <button 
+            onClick={() => setAiOpen(true)}
+            className="w-16 h-16 bg-black text-white rounded-none border-4 border-black shadow-[6px_6px_0px_0px_rgba(37,99,235,1)] flex items-center justify-center hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+          >
+            <MessageSquare size={24} />
+          </button>
+        ) : (
+          <div className="w-80 md:w-96 neo-card bg-white p-6 animate-in slide-in-from-right-8">
+            <div className="flex justify-between items-center border-b-4 border-black pb-4 mb-4">
+              <h4 className="font-black uppercase italic flex items-center gap-2">
+                <Bot className="text-blue-600" /> Care Assistant
+              </h4>
+              <button onClick={() => setAiOpen(false)}><X size={20}/></button>
+            </div>
+            
+            <div className="h-64 overflow-y-auto mb-4 bg-slate-50 p-4 font-bold text-xs space-y-4">
+              {aiResponse ? (
+                <div className="p-4 bg-white border-2 border-black italic leading-relaxed">
+                  {aiResponse}
+                </div>
+              ) : (
+                <p className="opacity-30">Ask me anything about senior tech support...</p>
+              )}
+              {aiLoading && <div className="animate-pulse font-black text-blue-600">THINKING...</div>}
+            </div>
+
+            <form onSubmit={askAI} className="flex gap-2">
+              <input 
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ask a question..."
+                className="flex-1 p-3 text-xs"
+              />
+              <button type="submit" className="bg-black text-white p-3 border-2 border-black">
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
