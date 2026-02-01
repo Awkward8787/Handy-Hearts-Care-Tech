@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from './types/entities';
 import AdminPortal from './web/AdminPortal';
@@ -7,7 +6,7 @@ import ProviderPortal from './web/ProviderPortal';
 import LoginScreen from './web/components/LoginScreen';
 import { supabase } from './lib/supabase';
 
-const ADMIN_EMAIL = 'awkwardjmusic@gmail.com';
+const MASTER_ADMIN_EMAIL = 'awkwardjmusic@gmail.com';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -15,11 +14,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchAndMapUser(session.user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await fetchAndMapUser(session.user);
+        }
+      } catch (err) {
+        console.error("HandyHearts: Session Error", err);
+      } finally {
+        setInitializing(false);
       }
-      setInitializing(false);
     };
 
     initSession();
@@ -30,18 +34,19 @@ const App: React.FC = () => {
       } else {
         setUser(null);
       }
+      setInitializing(false);
     });
     
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchAndMapUser = async (sbUser: any, retryCount = 0) => {
-    // 1. Check for hardcoded Admin override immediately
-    if (sbUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    // 1. ABSOLUTE ADMIN OVERRIDE (Instant access for the master email)
+    if (sbUser.email?.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase()) {
       setUser({
         id: sbUser.id,
         email: sbUser.email,
-        name: sbUser.user_metadata?.full_name || 'Administrator',
+        name: sbUser.user_metadata?.full_name || 'System Administrator',
         role: UserRole.ADMIN,
         is_approved: true,
         is_banned: false
@@ -62,7 +67,6 @@ const App: React.FC = () => {
           return;
         }
         
-        // Fallback mapping
         setUser({
           id: sbUser.id,
           email: sbUser.email || '',
@@ -82,7 +86,7 @@ const App: React.FC = () => {
         });
       }
     } catch (e) {
-      console.error('HandyHearts: Profile Mapping Error', e);
+      console.error('HandyHearts: Profile Mapping Failure', e);
     }
   };
 
@@ -94,7 +98,7 @@ const App: React.FC = () => {
   if (initializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-12 h-12 border-4 border-black border-t-blue-600 animate-spin"></div>
+        <div className="w-16 h-16 border-8 border-black border-t-blue-600 animate-spin"></div>
       </div>
     );
   }
