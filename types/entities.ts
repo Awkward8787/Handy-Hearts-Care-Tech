@@ -29,6 +29,7 @@ export interface InquirySubmission {
   notes: string | null;
   status: InquiryStatus;
   assigned_provider_user_id: string | null;
+  total_price_cents?: number;
   created_at: string;
   updated_at: string;
 }

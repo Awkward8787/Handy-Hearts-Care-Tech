@@ -30,7 +30,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
   useEffect(() => {
     fetchServices();
     fetchMyInquiries();
-  }, []);
+  }, [view]);
 
   const fetchServices = async () => {
     const { data } = await supabase.from('services').select('*').eq('is_active', true);
@@ -57,7 +57,8 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // In a real app, this would create a 'booking' record in 'pending' state
+      if (!quote) throw new Error("Quote must be generated before dispatch.");
+
       const { error } = await supabase.from('inquiry_submission').insert({
         user_id: user.id,
         full_name: inquiryForm.fullName,
@@ -65,6 +66,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
         phone_e164: inquiryForm.phone,
         service_requested: inquiryForm.serviceName,
         notes: inquiryForm.notes,
+        total_price_cents: quote.total,
         status: 'new'
       });
       if (error) throw error;
@@ -235,15 +237,15 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                   <div key={i.id} className="border-8 border-black p-10 bg-white flex flex-col md:flex-row justify-between items-start md:items-center group transition-all hover:bg-slate-50">
                     <div className="mb-4 md:mb-0">
                       <div className="flex items-center gap-4 mb-4">
-                        <span className={`px-4 py-1 text-[10px] font-black uppercase tracking-widest ${i.status === 'new' ? 'bg-yellow-400 text-black' : 'bg-black text-white'}`}>{i.status}</span>
+                        <span className={`px-4 py-1 text-[10px] font-black uppercase tracking-widest ${i.status === 'new' ? 'bg-yellow-400 text-black' : i.status === 'assigned' ? 'bg-emerald-500 text-white' : 'bg-black text-white'}`}>{i.status}</span>
                         <span className="text-[10px] font-black opacity-30 uppercase">REF: {i.id.slice(0, 12)}</span>
                       </div>
                       <h3 className="text-4xl md:text-5xl font-black uppercase italic tracking-tight">{i.service_requested}</h3>
                       <p className="font-bold text-slate-500 mt-4 max-w-xl line-clamp-2">"{i.notes}"</p>
                     </div>
                     <div className="text-right w-full md:w-auto">
-                      <p className="font-black uppercase text-xl md:text-2xl italic">{new Date(i.created_at).toLocaleDateString()}</p>
-                      <p className="text-[10px] font-black uppercase opacity-20 tracking-widest mt-2">Authenticated Timestamp</p>
+                      <p className="font-black uppercase text-xl md:text-2xl italic">${((i.total_price_cents || 0)/100).toFixed(2)}</p>
+                      <p className="text-[10px] font-black uppercase opacity-20 tracking-widest mt-2">{new Date(i.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                 ))
