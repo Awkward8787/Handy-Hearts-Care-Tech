@@ -26,7 +26,6 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("HandyHearts: Critical Boot Failure:", e);
       } finally {
-        // Ensure loading state is ALWAYS resolved
         setLoading(false);
       }
     };
@@ -93,19 +92,8 @@ const App: React.FC = () => {
     setLoading(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center space-y-10">
-          <div className="w-24 h-24 border-[14px] border-black border-t-red-500 animate-spin"></div>
-          <div className="text-center">
-            <h2 className="text-3xl font-black uppercase tracking-[0.4em] italic leading-none animate-pulse">HandyHearts</h2>
-            <p className="text-[10px] font-black uppercase tracking-widest mt-4 opacity-30">Establishing Secure Link...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Loading screen removed per user request. 
+  // The app will now show the LoginScreen until a session is established.
 
   if (!user) {
     return <LoginScreen onLogin={(u) => setUser(u)} />;
