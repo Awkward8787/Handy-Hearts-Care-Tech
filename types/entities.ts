@@ -10,6 +10,8 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  is_approved?: boolean;
+  is_banned?: boolean;
   phone_e164?: string;
 }
 
@@ -48,20 +50,17 @@ export interface Service {
   min_hours: number;
 }
 
-// Added missing ServiceType exported member for PricingEngine
 export interface ServiceType {
   name: string;
   baseRate: number;
   minHours: number;
 }
 
-// Added missing PriceItem exported member for PricingEngine breakdown items
 export interface PriceItem {
   label: string;
   amount: number;
 }
 
-// Added missing PriceBreakdown exported member for PricingEngine results
 export interface PriceBreakdown {
   items: PriceItem[];
   total: number;
@@ -88,7 +87,7 @@ export interface MonitoringNote {
   content: string;
   author_id: string;
   created_at: string;
-  author?: {
-    full_name: string;
+  app_user?: {
+    name: string;
   };
 }

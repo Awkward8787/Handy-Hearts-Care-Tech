@@ -13,7 +13,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
-  // Data States
   const [inquiries, setInquiries] = useState<InquirySubmission[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -29,21 +28,31 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
     setErrorMsg(null);
     try {
       if (activeTab === 'hub') {
-        const { data: i } = await supabase.from('inquiry_submission').select('*');
+        const { data: i } = await supabase.from('inquiry_submission').select('*').order('created_at', { ascending: false });
         const { data: u } = await supabase.from('app_user').select('*');
         const { data: b } = await supabase.from('bookings').select('*');
         setInquiries(i || []);
         setUsers(u || []);
         setBookings(b || []);
       } else if (activeTab === 'vetting') {
-        const { data } = await supabase.from('app_user').select('*').eq('role', 'PROVIDER');
+        const { data } = await supabase.from('app_user').select('*').eq('role', 'PROVIDER').order('created_at', { ascending: false });
         setUsers(data || []);
       } else if (activeTab === 'services') {
         const { data } = await supabase.from('services').select('*').order('name');
         setServices(data || []);
       } else if (activeTab === 'monitoring') {
-        const { data } = await supabase.from('admin_monitoring_notes').select('*, app_user(name)').order('created_at', { ascending: false });
-        setMonitoring(data || []);
+        const { data, error: monError } = await supabase
+          .from('admin_monitoring_notes')
+          .select('*, app_user!author_id(name)')
+          .order('created_at', { ascending: false });
+        
+        if (monError) {
+           const { data: fallbackData } = await supabase.from('admin_monitoring_notes').select('*').order('created_at', { ascending: false });
+           setMonitoring(fallbackData || []);
+           setErrorMsg("Warning: Safety log relationship data is syncing. Author names hidden.");
+        } else {
+           setMonitoring(data || []);
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -68,7 +77,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row text-black font-sans selection:bg-red-500 selection:text-white">
-      {/* Sidebar Navigation */}
       <aside className="w-full md:w-80 bg-black text-white p-8 flex flex-col border-r-8 border-black z-50">
         <div className="mb-16">
           <h2 className="text-4xl font-black uppercase italic leading-none tracking-tighter">Command</h2>
@@ -98,7 +106,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
         </button>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-8 lg:p-16 overflow-y-auto bg-slate-50">
         {errorMsg && (
           <div className="bg-red-600 text-white p-6 border-8 border-black mb-10 font-black uppercase italic">
@@ -109,7 +116,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
         {activeTab === 'hub' && (
           <div className="space-y-12">
             <h1 className="text-8xl font-black uppercase italic tracking-tighter leading-none">Command Hub</h1>
-            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="bg-white border-8 border-black p-10 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
                 <p className="text-[10px] font-black uppercase opacity-40 mb-2">Total Revenue</p>
@@ -128,7 +134,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                 <p className="text-6xl font-black tracking-tighter italic text-emerald-400">99.8%</p>
               </div>
             </div>
-
             <div className="bg-white border-8 border-black p-12">
               <h2 className="text-3xl font-black uppercase italic mb-8 border-b-4 border-black pb-4">Recent Bookings</h2>
               {bookings.length === 0 ? (
@@ -164,10 +169,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                     <h3 className="text-4xl font-black uppercase italic leading-none">{p.name || 'ANON_NODE'}</h3>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">{p.email} • {p.phone_e164 || 'NO_PHONE'}</p>
                   </div>
-                  <button 
-                    onClick={() => toggleApproval(p.id, p.is_approved)}
-                    className={`px-8 py-5 font-black uppercase text-xs transition-all ${p.is_approved ? 'bg-black text-white hover:bg-red-600' : 'bg-red-600 text-white hover:bg-black'}`}
-                  >
+                  <button onClick={() => toggleApproval(p.id, p.is_approved)} className={`px-8 py-5 font-black uppercase text-xs transition-all ${p.is_approved ? 'bg-black text-white hover:bg-red-600' : 'bg-red-600 text-white hover:bg-black'}`}>
                     {p.is_approved ? 'Revoke Access' : 'Approve Node'}
                   </button>
                 </div>
@@ -184,16 +186,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                 <div key={s.id} className="bg-white border-8 border-black p-10">
                   <h3 className="text-4xl font-black uppercase italic mb-4">{s.name}</h3>
                   <p className="text-slate-500 font-bold mb-8 italic">"{s.description}"</p>
-                  
                   <div className="flex items-end gap-4">
                     <div className="flex-1 space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest opacity-40">Base Rate (Cents)</label>
-                      <input 
-                        type="number" 
-                        defaultValue={s.base_rate_cents}
-                        onBlur={(e) => updateServiceRate(s.id, parseInt(e.target.value))}
-                        className="w-full border-4 border-black p-4 font-black text-2xl"
-                      />
+                      <input type="number" defaultValue={s.base_rate_cents} onBlur={(e) => updateServiceRate(s.id, parseInt(e.target.value))} className="w-full border-4 border-black p-4 font-black text-2xl" />
                     </div>
                     <div className="p-4 bg-black text-white font-black text-xl">
                       ${(s.base_rate_cents/100).toFixed(2)}/HR
@@ -217,7 +213,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ user, onLogout }) => {
                       <span className="text-[10px] font-black opacity-40 uppercase">{new Date(n.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-2xl font-black italic">"{n.content}"</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Source: {n.app_user?.name || 'ROOT_SYSTEM'}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Source: {n.app_user?.name || 'AUTHORIZED_NODE'}</p>
                   </div>
                 </div>
               ))}
