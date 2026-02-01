@@ -1,0 +1,5 @@
+{
+  "name": "HandyHearts Care Tech",
+  "description": "A production-ready care services platform with multi-role support for Families, Providers, and Admins, featuring deterministic pricing and secure Stripe payments.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HandyHearts Care Tech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { 
+          font-family: 'Inter', sans-serif; 
+          background-color: #ffffff;
+          color: #000000;
+        }
+        /* Neobrutalist Customizations */
+        .neo-shadow { shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]; }
+        .neo-shadow-sm { shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]; }
+        .neo-border { border: 8px solid black; }
+        
+        /* Custom scrollbar for high contrast */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #ffffff; }
+        ::-webkit-scrollbar-thumb { background: #000000; border: 3px solid #ffffff; }
+        
+        input:focus, select:focus, textarea:focus {
+          outline: none;
+          background-color: #f8fafc;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.48.1",
+    "express": "https://esm.sh/express@^5.2.1",
+    "stripe": "https://esm.sh/stripe@^20.3.0",
+    "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.3"
+  }
+}
+</script>
+</head>
+<body class="bg-white text-black selection:bg-yellow-300">
+    <div id="root"></div>
+</body>
+</html>
