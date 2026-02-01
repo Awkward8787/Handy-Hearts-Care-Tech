@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Service, DeviceDetail, PriceBreakdown } from '../../types/entities';
 import { PricingEngine } from '../../domain/pricingEngine';
 import { ChevronRight, ChevronLeft, Plus, Laptop, Smartphone, Tv, Wifi, Printer, ShieldCheck, HelpCircle } from 'lucide-react';
@@ -26,6 +26,17 @@ const ServiceRequestWizard: React.FC<WizardProps> = ({ services, onSubmit, onCan
     notes: ''
   });
 
+  // Fix: Move state initialization out of render to avoid "Type 'void' is not assignable to type 'ReactNode'"
+  // and potential infinite render loops when updating state during component execution.
+  useEffect(() => {
+    if (step === 2 && formData.devices.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        devices: [{ deviceType: 'smartphone_iphone', brand: '', model: '', issueDescription: '' }]
+      }));
+    }
+  }, [step, formData.devices.length]);
+
   const categories = [
     { id: 'device_setup', label: 'Device Setup', icon: <Laptop className="w-8 h-8"/> },
     { id: 'troubleshooting', label: 'Fix/Repair', icon: <ShieldCheck className="w-8 h-8"/> },
@@ -48,7 +59,7 @@ const ServiceRequestWizard: React.FC<WizardProps> = ({ services, onSubmit, onCan
   };
 
   const calculateTotal = (): PriceBreakdown => {
-    const baseService = services.find(s => s.name.toLowerCase().includes(formData.category.replace('_', ' '))) || services[0];
+    const baseService = services.find(s => s.name.toLowerCase().includes(formData.category.replace(/_/g, ' '))) || services[0] || { name: 'Care Service', base_rate_cents: 3500, min_hours: 2 };
     return PricingEngine.calculate(
       { name: baseService.name, baseRate: baseService.base_rate_cents, minHours: baseService.min_hours },
       baseService.min_hours,
@@ -200,7 +211,7 @@ const ServiceRequestWizard: React.FC<WizardProps> = ({ services, onSubmit, onCan
             <div className="bg-slate-50 border-4 border-black p-8 space-y-4">
               <div className="flex justify-between font-black uppercase text-xs border-b-2 border-black pb-2">
                 <span>Deployment Module</span>
-                <span className="text-blue-600">{formData.category.replace('_', ' ')}</span>
+                <span className="text-blue-600">{formData.category.replace(/_/g, ' ')}</span>
               </div>
               {quote.items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm font-bold opacity-60">

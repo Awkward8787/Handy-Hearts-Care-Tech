@@ -78,22 +78,26 @@ export interface Service {
   is_active: boolean;
 }
 
+// Added PriceItem interface to fix missing import in pricingEngine.ts
 export interface PriceItem {
   label: string;
   amount: number;
 }
 
+// Updated PriceBreakdown to use the PriceItem interface
 export interface PriceBreakdown {
   items: PriceItem[];
   total: number;
 }
 
+// Added ServiceType to match the expected shape in PricingEngine
 export interface ServiceType {
   name: string;
   baseRate: number;
   minHours: number;
 }
 
+// Added Booking interface to resolve missing import in AdminPortal.tsx
 export interface Booking {
   id: string;
   total_amount_cents: number;

@@ -29,11 +29,16 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: s } = await supabase.from('services').select('*').eq('is_active', true);
-    const { data: i } = await supabase.from('inquiry_submission').select('*').order('created_at', { ascending: false });
-    setServices(s || []);
-    setInquiries(i || []);
-    setLoading(false);
+    try {
+      const { data: s } = await supabase.from('services').select('*').eq('is_active', true);
+      const { data: i } = await supabase.from('inquiry_submission').select('*').order('created_at', { ascending: false });
+      setServices(s || []);
+      setInquiries(i || []);
+    } catch (err) {
+      console.error("Data Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const askAI = async (e: React.FormEvent) => {
@@ -46,14 +51,16 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: aiPrompt,
+        contents: [{ role: 'user', parts: [{ text: aiPrompt }] }],
         config: {
-          systemInstruction: "You are the HandyHearts Care Assistant. You help families understand technology for seniors. Be concise, patient, and neo-brutalist in your helpfulness. If they ask about services, recommend hiring a HandyHearts Pro."
+          systemInstruction: "You are the HandyHearts Care Assistant. You help families understand technology for seniors. Be concise, patient, and helpful. If they ask about services, recommend hiring a HandyHearts Pro. Your tone should be encouraging but professional."
         }
       });
-      setAiResponse(response.text || "I'm having trouble connecting to the logic core.");
+      setAiResponse(response.text || "I'm having trouble processing that request right now.");
+      setAiPrompt('');
     } catch (err) {
-      setAiResponse("System Fault: Check API Key status.");
+      console.error("AI Assistant Error:", err);
+      setAiResponse("System Fault: The AI logic core is currently unavailable.");
     } finally {
       setAiLoading(false);
     }
@@ -135,7 +142,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                 <h3 className="text-xl font-black uppercase mb-2">Active Signal</h3>
                 {inquiries.filter(i => i.status !== 'completed')[0] ? (
                   <div className="space-y-4">
-                    <p className="text-3xl font-black italic uppercase leading-none">{inquiries.filter(i => i.status !== 'completed')[0].service_category.replace('_', ' ')}</p>
+                    <p className="text-3xl font-black italic uppercase leading-none">{inquiries.filter(i => i.status !== 'completed')[0].service_category.replace(/_/g, ' ')}</p>
                     <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 font-black uppercase text-[10px]">Status: {inquiries.filter(i => i.status !== 'completed')[0].status}</span>
                   </div>
                 ) : (
@@ -150,7 +157,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                 {inquiries.slice(0, 5).map(inq => (
                   <div key={inq.id} className="neo-card p-6 flex justify-between items-center group">
                     <div>
-                      <h4 className="text-xl font-black uppercase italic">{inq.service_category.replace('_', ' ')}</h4>
+                      <h4 className="text-xl font-black uppercase italic">{inq.service_category.replace(/_/g, ' ')}</h4>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(inq.created_at).toLocaleDateString()}</p>
                     </div>
                     <span className={`px-4 py-1 border-4 border-black font-black uppercase text-[10px] ${inq.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-yellow-400'}`}>{inq.status}</span>
@@ -177,7 +184,7 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                  <div key={inq.id} className="neo-card p-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
                     <div>
                       <span className="text-[10px] font-black opacity-20 block mb-2 tracking-[0.4em]">REF_{inq.id.slice(0,12)}</span>
-                      <h3 className="text-4xl font-black uppercase italic">{inq.service_category.replace('_', ' ')}</h3>
+                      <h3 className="text-4xl font-black uppercase italic">{inq.service_category.replace(/_/g, ' ')}</h3>
                       <p className="font-bold text-slate-400 mt-2">DEPLOYED FOR: {inq.senior_info?.name || 'N/A'}</p>
                     </div>
                     <div className="text-right">
@@ -225,9 +232,9 @@ const FamilyPortal: React.FC<FamilyPortalProps> = ({ user, onLogout }) => {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Ask a question..."
-                className="flex-1 p-3 text-xs"
+                className="flex-1 p-3 text-xs outline-none"
               />
-              <button type="submit" className="bg-black text-white p-3 border-2 border-black">
+              <button type="submit" disabled={aiLoading} className="bg-black text-white p-3 border-2 border-black hover:bg-blue-600 transition-colors disabled:opacity-50">
                 <Send size={16} />
               </button>
             </form>
