@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User, UserRole } from '../../types/entities';
 import { supabase } from '../../lib/supabase';
@@ -54,9 +53,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         if (signupError) throw signupError;
         
         if (data.user && data.session) {
-          setMessage('Node Initialized. Redirecting...');
+          setMessage('Node Initialized. Link established.');
         } else {
-          setMessage('Sequence Initiated. Check your email for the verification link.');
+          setMessage('Sequence Initiated. Check your email for the activation code.');
         }
       } else {
         const { error: signinError } = await supabase.auth.signInWithPassword({
@@ -68,9 +67,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     } catch (err: any) {
       console.error('HandyHearts Auth Error:', err);
       
-      // Specifically target the common Supabase trigger error
       if (err.message?.includes('Database error saving new user')) {
-        setError('CRITICAL SYNC ERROR: The database failed to create your profile. Please ensure you have run the "Robust Profile Sync" SQL script in your Supabase Dashboard.');
+        setError('CRITICAL: Database Profile Trigger failed. Please run the provided SQL setup script in your Supabase Dashboard to enable profile sync.');
       } else if (err.message?.includes('Email not confirmed')) {
         setError('VERIFICATION REQUIRED: Please check your inbox for the activation link.');
       } else {
@@ -111,7 +109,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             >
               ← BACK
             </button>
-            {/* Remove the switch button for Admins to prevent unauthorized registration from terminal access */}
             {!isAdmin && (
               <button 
                 onClick={() => setActiveForm({ ...activeForm, mode: isSignup ? 'signin' : 'signup' })}
