@@ -1,0 +1,8 @@
+// Empty on purpose. Copy this file to Config.local.xcconfig and fill the values there.
+// The include stays after these assignments so the local file can override them.
+SUPABASE_URL =
+SUPABASE_ANON_KEY =
+STRIPE_PUBLISHABLE_KEY =
+API_BASE_URL =
+BUSINESS_TIMEZONE =
+#include? "Config.local.xcconfig"

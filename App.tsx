@@ -1,119 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { User, UserRole } from './types/entities';
-import AdminPortal from './web/AdminPortal';
-import FamilyPortal from './web/FamilyPortal';
-import ProviderPortal from './web/ProviderPortal';
-import LoginScreen from './web/components/LoginScreen';
-import { supabase } from './lib/supabase';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { DocumentMeta } from './lib/documentMeta';
+import { ErrorBoundary } from './web/components/ErrorBoundary';
+import { PublicLayout } from './web/components/PublicLayout';
+import { ConsultPage } from './web/pages/ConsultPage';
+import { HomePage } from './web/pages/HomePage';
+import { NotFoundPage, PrivacyPage, TermsPage } from './web/pages/LegalPages';
+import { ReceiptLookupPage, ReceiptPage } from './web/pages/ReceiptPage';
+import { ServicesPage } from './web/pages/ServicesPage';
+import { AppPaths, RouteId } from './web/routing';
 
-const MASTER_ADMIN_EMAIL = 'awkwardjmusic@gmail.com';
+const BookPage = lazy(() => import('./web/pages/BookPage').then((module) => ({ default: module.BookPage })));
+const StaffPage = lazy(() => import('./web/pages/StaffPage').then((module) => ({ default: module.StaffPage })));
 
-const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [initializing, setInitializing] = useState(true);
-
+function useRoute(): { id: RouteId; reference: string | null } {
+  const [path, setPath] = useState(() => window.location.pathname);
   useEffect(() => {
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await fetchAndMapUser(session.user);
-        }
-      } catch (err) {
-        console.error("HandyHearts: Session Error", err);
-      } finally {
-        setInitializing(false);
-      }
-    };
-
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchAndMapUser(session.user);
-      } else {
-        setUser(null);
-      }
-      setInitializing(false);
-    });
-    
-    return () => subscription.unsubscribe();
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
+  return AppPaths.match(path);
+}
 
-  const fetchAndMapUser = async (sbUser: any, retryCount = 0) => {
-    // 1. ABSOLUTE ADMIN OVERRIDE (Instant access for the master email)
-    if (sbUser.email?.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase()) {
-      setUser({
-        id: sbUser.id,
-        email: sbUser.email,
-        name: sbUser.user_metadata?.full_name || 'System Administrator',
-        role: UserRole.ADMIN,
-        is_approved: true,
-        is_banned: false
-      });
-      return;
-    }
+function Outlet() {
+  const route = useRoute();
+  useEffect(() => {
+    DocumentMeta.apply(route.id);
+  }, [route.id]);
 
-    try {
-      const { data, error } = await supabase
-        .from('app_user')
-        .select('*')
-        .eq('id', sbUser.id)
-        .single();
+  let page = <NotFoundPage />;
+  if (route.id === 'home') page = <HomePage />;
+  if (route.id === 'services') page = <ServicesPage />;
+  if (route.id === 'consult') page = <ConsultPage />;
+  if (route.id === 'book') page = <Suspense fallback={<main id="main" className="px-4 py-12">Loading booking</main>}><BookPage /></Suspense>;
+  if (route.id === 'privacy') page = <PrivacyPage />;
+  if (route.id === 'terms') page = <TermsPage />;
+  if (route.id === 'staff') page = <Suspense fallback={<main id="main" className="px-4 py-12">Loading staff</main>}><StaffPage /></Suspense>;
+  if (route.id === 'receipt-lookup') page = <ReceiptLookupPage />;
+  if (route.id === 'receipt' && route.reference) page = <ReceiptPage reference={route.reference} />;
 
-      if (error || !data) {
-        if (retryCount < 5) {
-          setTimeout(() => fetchAndMapUser(sbUser, retryCount + 1), 1000);
-          return;
-        }
-        
-        setUser({
-          id: sbUser.id,
-          email: sbUser.email || '',
-          name: sbUser.user_metadata?.full_name || 'User',
-          role: (sbUser.user_metadata?.role as UserRole || UserRole.FAMILY),
-          is_approved: false,
-          is_banned: false
-        });
-      } else {
-        setUser({
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          role: data.role as UserRole,
-          is_approved: data.is_approved,
-          is_banned: data.is_banned
-        });
-      }
-    } catch (e) {
-      console.error('HandyHearts: Profile Mapping Failure', e);
-    }
-  };
+  return <PublicLayout>{page}</PublicLayout>;
+}
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
-
-  if (initializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-16 h-16 border-8 border-black border-t-blue-600 animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginScreen onLogin={(u) => setUser(u)} />;
-  }
-
+export default function App() {
   return (
-    <div className="min-h-screen">
-      {user.role === UserRole.ADMIN && <AdminPortal user={user} onLogout={handleLogout} />}
-      {user.role === UserRole.FAMILY && <FamilyPortal user={user} onLogout={handleLogout} />}
-      {user.role === UserRole.PROVIDER && <ProviderPortal user={user} onLogout={handleLogout} />}
-    </div>
+    <ErrorBoundary>
+      <a className="skip-link" href="#main">Skip to content</a>
+      <Outlet />
+    </ErrorBoundary>
   );
-};
-
-export default App;
+}
