@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="HandyHearts Care Tech" width="100%">
+  <img src="assets/banner.png" alt="HandyHearts Care Tech" width="100%">
 </p>
 
 # HandyHearts Care Tech
@@ -13,6 +13,20 @@
 ![Stripe](https://img.shields.io/badge/Stripe-635BFF&logo=stripe&logoColor=white)
 
 Vite/React front end plus a small Express server under `server/`. Includes family, provider, and admin portals and a service-request wizard. Stock AI Studio README was replaced.
+
+
+## How it works
+
+```mermaid
+flowchart LR
+  F[Families] --> UI[Vite care portal]
+  P[Providers] --> UI
+  A[Admins] --> UI
+  UI --> SB[(Supabase)]
+  UI -.->|Stripe hooks| Pay[Payments]
+```
+
+Multi-role care-services UI with pricing-engine hooks. Supabase + Stripe wiring present; treat as product UI / prototype unless a live deploy is confirmed.
 
 ## Features
 
