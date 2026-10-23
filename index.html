@@ -1,91 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HandyHearts Care Tech | Marketplace</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
-        :root {
-          --primary: #2563eb;
-          --primary-dark: #1d4ed8;
-          --secondary: #10b981;
-          --bg-main: #f9fafb;
-        }
-
-        body { 
-          font-family: 'Inter', sans-serif; 
-          background-color: var(--bg-main);
-          color: #1f2937;
-          margin: 0;
-          line-height: 1.6;
-        }
-
-        .neo-card {
-          background: white;
-          border: 4px solid #000;
-          box-shadow: 8px 8px 0px 0px #000;
-          transition: all 0.2s ease;
-        }
-
-        .neo-card:hover {
-          transform: translate(-2px, -2px);
-          box-shadow: 10px 10px 0px 0px #000;
-        }
-
-        .neo-btn-primary {
-          background: var(--primary);
-          color: white;
-          border: 4px solid #000;
-          font-weight: 900;
-          text-transform: uppercase;
-          box-shadow: 4px 4px 0px 0px #000;
-        }
-
-        .neo-btn-primary:active {
-          transform: translate(2px, 2px);
-          box-shadow: 0px 0px 0px 0px #000;
-        }
-
-        /* Custom inputs */
-        input, select, textarea {
-          border: 3px solid #000 !important;
-          border-radius: 0 !important;
-          padding: 1rem !important;
-          font-family: 'Inter', sans-serif;
-          font-weight: 600;
-        }
-
-        .selection-blue::selection {
-          background-color: #dbeafe;
-          color: #1e40af;
-        }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "express": "https://esm.sh/express@^5.2.1",
-    "stripe": "https://esm.sh/stripe@^20.3.0",
-    "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.3",
-    "cors": "https://esm.sh/cors@^2.8.6",
-    "dotenv": "https://esm.sh/dotenv@^17.2.3",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.93.3",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
-  }
-}
-</script>
-</head>
-<body class="selection-blue">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HandyHearts Care Tech</title>
+    <meta name="description" content="Book technology help for an older adult. Request a consultation or book a visit without an account." />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://hhcaretech.com/" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HandyHearts Care Tech" />
+    <meta property="og:title" content="HandyHearts Care Tech" />
+    <meta property="og:description" content="Book technology help for an older adult. Request a consultation or book a visit without an account." />
+    <meta property="og:url" content="https://hhcaretech.com/" />
+    <meta property="og:image" content="https://hhcaretech.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="HandyHearts Care Tech" />
+    <meta name="twitter:description" content="Book technology help for an older adult. Request a consultation or book a visit without an account." />
+    <meta name="twitter:image" content="https://hhcaretech.com/og.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>
